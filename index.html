@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>职业倦怠深度诊断</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+  background:#1a1a28;color:#e8e0d0;
+  min-height:100vh;display:flex;justify-content:center;
+}
+.app{width:100%;max-width:480px;min-height:100vh;position:relative;overflow:hidden}
+.screen{display:none;flex-direction:column;min-height:100vh;padding:24px 28px}
+.screen.active{display:flex}
+
+/* ===== 封面 ===== */
+.cover{justify-content:center;align-items:center;text-align:center;gap:28px}
+.cover .icon{font-size:64px;margin-bottom:8px}
+.cover h1{font-size:36px;font-weight:900;line-height:1.3;letter-spacing:2px}
+.cover h1 span{color:#d4b87a}
+.cover .sub{font-size:16px;color:#8a8070;line-height:1.7;max-width:300px}
+.cover .btn-start{
+  margin-top:20px;padding:16px 64px;font-size:20px;font-weight:700;
+  background:linear-gradient(135deg,#c9a96e,#a6844d);color:#1a1a28;
+  border:none;border-radius:40px;cursor:pointer;letter-spacing:2px;
+  transition:transform .15s
+}
+.cover .btn-start:active{transform:scale(.96)}
+.cover .trust{font-size:13px;color:#5a5548;margin-top:12px}
+
+/* ===== 题目 ===== */
+.progress-wrap{padding:8px 0 20px}
+.progress-bar{height:4px;background:#2a2a38;border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#c9a96e,#d4b87a);border-radius:2px;transition:width .3s}
+.progress-label{font-size:13px;color:#6a6558;margin-top:8px;text-align:right}
+
+.question-area{flex:1;display:flex;flex-direction:column;gap:24px}
+.question-area .q-text{font-size:28px;font-weight:700;line-height:1.4}
+.options{display:flex;flex-direction:column;gap:14px}
+.opt{
+  padding:18px 20px;border-radius:16px;
+  background:#242430;border:1.5px solid #2e2e3c;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:flex-start;gap:14px;
+}
+.opt:active{transform:scale(.98);border-color:#c9a96e;background:#2a2a38}
+.opt .letter{
+  width:32px;height:32px;border-radius:50%;
+  background:#2e2e3c;color:#8a8070;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:700;flex-shrink:0;
+}
+.opt .txt{font-size:16px;line-height:1.55;color:#c8c0b0}
+
+/* ===== 加载动画 ===== */
+.loading{justify-content:center;align-items:center;text-align:center;gap:32px}
+.loading .spinner{
+  width:60px;height:60px;border:3px solid #2e2e3c;
+  border-top-color:#c9a96e;border-radius:50%;
+  animation:spin .8s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading .msg{font-size:18px;color:#a09880;letter-spacing:1px;transition:all .5s}
+.loading .dots{display:flex;gap:8px;justify-content:center}
+.loading .dots span{width:8px;height:8px;border-radius:50%;background:#c9a96e;animation:pulse 1.2s infinite}
+.loading .dots span:nth-child(2){animation-delay:.2s}
+.loading .dots span:nth-child(3){animation-delay:.4s}
+@keyframes pules{0%,80%,100%{opacity:.3}40%{opacity:1}}
+
+/* ===== 结果页 ===== */
+.result{background:linear-gradient(180deg,#1a1a28 0%,#1f1f2e 100%)}
+.result .type-badge{
+  display:inline-block;padding:8px 20px;border:1px solid rgba(201,169,110,.3);
+  border-radius:20px;font-size:14px;color:#c9a96e;letter-spacing:3px;
+  align-self:flex-start;margin-bottom:16px
+}
+.result .type-name{font-size:42px;font-weight:900;margin-bottom:8px}
+.result .type-tagline{font-size:20px;color:#d4b87a;margin-bottom:4px}
+.result .type-sub{font-size:15px;color:#8a8070;margin-bottom:32px}
+
+/* 画像条 */
+.profile-section{margin-bottom:28px}
+.profile-section h3{font-size:18px;color:#a09880;margin-bottom:16px;letter-spacing:2px}
+.profile-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.profile-row .label{width:90px;font-size:13px;color:#8a8070;text-align:right;flex-shrink:0}
+.profile-row .bar-wrap{flex:1;height:20px;background:#242430;border-radius:10px;overflow:hidden;position:relative}
+.profile-row .bar-fill{height:100%;background:linear-gradient(90deg,#5a4a30,#c9a96e);border-radius:10px;transition:width .8s ease}
+.profile-row .pct{width:44px;font-size:13px;color:#c9a96e;text-align:right;flex-shrink:0}
+
+/* 信号清单 */
+.checklist{margin-bottom:28px}
+.checklist h3{font-size:18px;color:#a09880;margin-bottom:14px;letter-spacing:2px}
+.checklist .item{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:15px;color:#c8c0b0;line-height:1.5}
+.checklist .item .chk{color:#c9a96e;font-size:18px;flex-shrink:0}
+
+/* 根源分析 */
+.root-cause{margin-bottom:28px}
+.root-cause h3{font-size:18px;color:#a09880;margin-bottom:14px;letter-spacing:2px}
+.root-cause p{font-size:15px;color:#b8b0a0;line-height:1.75;margin-bottom:12px}
+
+/* 解法 */
+.solution{margin-bottom:28px}
+.solution h3{font-size:18px;color:#a09880;margin-bottom:14px;letter-spacing:2px}
+.solution .step{margin-bottom:14px;padding-left:16px;border-left:2px solid #3a3a48}
+.solution .step .stitle{font-size:15px;color:#d4b87a;font-weight:600;margin-bottom:4px}
+.solution .step .sdesc{font-size:14px;color:#b0a898;line-height:1.6}
+
+/* 推荐 */
+.recommend{margin-bottom:28px}
+.recommend h3{font-size:18px;color:#a09880;margin-bottom:14px;letter-spacing:2px}
+.recommend .item{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;font-size:15px;color:#c8c0b0}
+.recommend .item .dot{color:#c9a96e;font-weight:700}
+
+/* 金句 */
+.golden{margin-bottom:32px;padding:28px 24px;background:#242430;border-radius:16px;text-align:center}
+.golden p{font-size:18px;color:#d4b87a;line-height:1.7;letter-spacing:1px}
+
+/* 分享 */
+.share-btn{
+  display:block;width:100%;padding:16px;font-size:17px;font-weight:700;
+  background:linear-gradient(135deg,#c9a96e,#a6844d);color:#1a1a28;
+  border:none;border-radius:30px;cursor:pointer;letter-spacing:2px;margin-bottom:12px
+}
+.share-btn:active{transform:scale(.98)}
+.share-hint{text-align:center;font-size:13px;color:#5a5548;margin-bottom:40px}
+
+/* 页尾 */
+.footer{text-align:center;padding:20px;font-size:12px;color:#3a3a48;border-top:1px solid #242430}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+// ========== 数据 ==========
+
+const questions = [{
+  q:'周五晚上，关掉工作群后<br>你做的第一件事是？',
+  opts:[
+    {l:'A',t:'瘫在沙发上刷手机，刷着刷着开始搜"怎么知道自己该不该离职"'},
+    {l:'B',t:'直接睡。一整周的心力已经耗完，需要先关机，周六才能正常做人'},
+    {l:'C',t:'打开一个想学的课程，但学不进去——你明白自己是在用"学新东西"补偿工作上得不到的意义感'},
+    {l:'D',t:'漫无目的地散步。觉得这一整周都在跑别人的剧本，这个夜晚是唯一属于自己的片刻'}
+  ]
+},{
+  q:'闹钟响了，想到今天要上班。<br>你身体哪个部位最先有反应？',
+  opts:[
+    {l:'A',t:'胃。隐隐绞紧或恶心感，每天早上都有'},
+    {l:'B',t:'眼皮。像被灌了铅，睁不开。需要比别人更长的时间才能"启动"'},
+    {l:'C',t:'脑子里。身体没问题，但脑壳自动开始预演今天要面对的那些对话'},
+    {l:'D',t:'胸口附近。不是痛——是一种"空"。盯着天花板，"又这样了一天"'}
+  ]
+},{
+  q:'以下哪种结果，<br>你最怕一年后变成真的？',
+  opts:[
+    {l:'A',t:'一年后还在这里。光想想就觉得胃在收紧'},
+    {l:'B',t:'一年后身体彻底垮了——不是抽象的"疲惫"，是需要医疗干预的那种垮'},
+    {l:'C',t:'一年后还在做同样的事。方向没变，焦虑就会年复一年'},
+    {l:'D',t:'一年后还是不知道想要什么。不知道自己为什么站着不动，才最消耗'}
+  ]
+},{
+  q:'让你每天硬撑着去上班的东西，<br>最接近哪一种？',
+  opts:[
+    {l:'A',t:'经济压力。房贷、房租、不敢裸辞。不是在工作——是在还生存债'},
+    {l:'B',t:'责任感。不是我多爱这份工作，是不能丢下团队和正在推进的事'},
+    {l:'C',t:'一个还没熄灭的期望。还在等——等那个"说不定哪天就对"的转机'},
+    {l:'D',t:'惯性。没什么特别的动力，也没什么特别的排斥。去就去吧'}
+  ]
+},{
+  q:'关掉这份测试后，<br>你最想去做的一件事是？',
+  opts:[
+    {l:'A',t:'更新简历，打开招聘软件。给"离开"这个选项一个认真的行动'},
+    {l:'B',t:'请假。尽早请。不是半天——至少三天以上。认真喘一口气'},
+    {l:'C',t:'找张纸。左边写"我想成为什么样的人"，右边写"我现在每天在做什么"'},
+    {l:'D',t:'什么都不做。先安静15分钟。感受那个模糊的、还没名字的"想去的地方"'}
+  ]
+}];
+
+const reports = {
+  A:{
+    badge:'职业倦怠诊断报告',
+    name:'环境消耗型',
+    tagline:'你不是扛不住——你是把能量给了一个不值得的地方',
+    sub:'诊断结论：问题不在你的能力、你的态度——问题在你待的环境本身在持续向你索取，但回报一直在减少。',
+    profile:{'环境消耗指数':91,'能量透支指数':76,'方向错位指数':58,'意义迷失指数':42},
+    signals:[
+      '周日从下午开始就焦虑',
+      '工作日的早晨需要做大量心理建设才能出门',
+      '身体有持续的不适——肠胃、睡眠、免疫力',
+      '觉得自己的工作大部分时间没有意义',
+      '对公司的规则、流程、人际关系感到疲惫',
+      '在思考"要不要走"这件事上花了超过3个月'
+    ],
+    cause:'不是你不够抗压。是环境中的某些东西在持续向你索取，而你的回报——不只是钱，包括认可、成长、价值感——一直在减少。刚入职时新鲜感遮掩了环境的不合理；新鲜感褪去后，环境本身的消耗性暴露出来。你发现自己不是在做事，而是在应对系统——流程、拉扯、向上管理、办公室政治。到了现在，你每天早上在跟自己谈判——不是在谈判"怎么做更好"，是在谈判"今天还要不要去"。这种谈判本身就是最大的能量流失。',
+    steps:[
+      {t:'第一步：给自己一个窗口期',d:'不用立刻辞职。给自己三个月，认真看外部机会。知道自己在"准备离开"，现在的环境对你的消耗会减轻——因为你知道它只是暂时的。'},
+      {t:'第二步：把"环境健康"排在薪资前面',d:'找下一份工作时，直接问——问HR团队的加班频率、问直属领导的管理方式、问团队成员的离开原因。什么样的环境算健康——不苛责、不内耗、待一天不会变得更灰。'},
+      {t:'第三步：不需要解释',d:'你的离开会有人不理解。不需要。你的身体是你最诚实的职业顾问——它已经在给你最准确的答案了。'}
+    ],
+    recommend:['换一个同等能力要求但不同行业的岗位——你的问题不在能力不够，在环境不对','去规模更小的团队——大公司的消耗源往往是系统性的，小团队没有这些包袱','短期项目/自由职业做过渡——如果对直接跳还有犹豫，可以接短项目来"戒断"'],
+    golden:'你没有被消耗完——你只是把能量给了一个不值得的地方。<br><br>离开不丢人。一直留下来才消耗勇气——你比你自己以为的更勇敢。'
+  },
+  B:{
+    badge:'职业倦怠诊断报告',
+    name:'能量透支型',
+    tagline:'你不是不适合——你是没电了',
+    sub:'诊断结论：你的问题不在工作本身。你在引擎红灯亮了之后又继续开了很久。现在的你不是在做决定——是在低电量模式下勉强运行。',
+    profile:{'能量透支指数':91,'环境消耗指数':76,'方向错位指数':58,'意义迷失指数':42},
+    signals:[
+      '注意力无法长时间集中——以前能一口气做完的事，现在断好几次',
+      '睡醒感觉更累——睡眠不能充电了',
+      '脾气比以前差——对亲近的人尤其失控，事后又内疚',
+      '不再有主动做事的冲动——只是在应对和回复',
+      '周末基本用来"恢复"，社交能力断崖式下降',
+      '拿到奖金/认可时没有开心，只是麻木'
+    ],
+    cause:'不是你不够热爱。是你忘了"人是有上限的"。你可能已经高强度运转了很长时间——不止几个月，可能是好几年。透支型倦怠的典型轨迹：开始时会觉得累→继续扛→变得更累→扛变成了常态→忘了"不累"是什么感觉。到了现在，疲惫已经不再是一个临时状态。它成了你的默认设置——你已经用"累"做了一年的基准线。你和工作之间的关系本身没问题。你不是讨厌你在做的事——你是讨厌自己在做的事已经占用了你做其他一切的能量。',
+    steps:[
+      {t:'第一步：请假',d:'认真地请一次长假——不是半天、不是周末。给自己至少连续一周的真正离线时间。让身体从"应激模式"切换到"恢复模式"。'},
+      {t:'第二步：离线期间什么都不要计划',d:'不要学新技能、不要看行业资讯、不要让自己有任何压力。饿了吃饭、困了就睡——让你的身体重新学会告诉你"舒服"是什么。'},
+      {t:'第三步：等身体恢复后再做判断',d:'你真的喜欢你的工作吗？在睡够了、休息够了、不再应激的时候——答案可能和现在完全不同。不要在电量不足时做重大决定。'}
+    ],
+    recommend:['现有岗位+调整幅度：和直属领导坦诚你的状态，一起把工作量/节奏重新设计到可持续的水平','同赛道但节奏更合理的公司：去之前直接问——问他们正常的周工时、问上一个离职的人为什么走','暂时不急着做任何重大职业决定。优先恢复——你需要的是睡觉、运动、好好吃、安静待着'],
+    golden:'你不是变弱了。你是连续太久了。<br><br>休息不是偷懒——是你给未来的自己铺路。一个好休息，能让你做半年的好决定。'
+  },
+  C:{
+    badge:'职业倦怠诊断报告',
+    name:'方向错位型',
+    tagline:'你做得很好——但做得好的事，不等于你该一直做下去',
+    sub:'诊断结论：你的焦虑不是来自工作强度。你每天在做的事，跟你内心深处"想成为的那个人"之间，夹角越来越大了。这种不对齐，比加班更消耗你。',
+    profile:{'方向错位指数':91,'能量透支指数':76,'环境消耗指数':58,'意义迷失指数':42},
+    signals:[
+      '工作上的成就（晋升、加薪、奖项）带来的开心非常短暂——很快又被"不对"的感觉吞掉',
+      '很羡慕那些"清楚地知道自己要做什么"的人',
+      '你做得很好，但不自豪。你能完成每一件事，但从不主动分享',
+      '脑中经常有另一个自己在一个不同的工作里——不是具体画面，但有一种"那里才是我的位置"的感觉',
+      '你害怕的不是换工作——是换了之后发现方向还是不对'
+    ],
+    cause:'你是四型里最"清醒"的一种——你比其他人更早意识到"我不是做这个的人"。这个意识本身是你的优势，但目前它带来的主要是焦虑，而不是行动。错位并不是一个突然发生的判断。它是一点一点累積的——你最初入行时可能确实对这个方向有兴趣，或者只是随便选了。渐渐地，你做的越久，越想"但这跟我想成为的那个人无关"。而这个声音你压了越久，焦虑就越强。你在意的东西是什么？你心里那个"更对的方向"是什么——这个不需要立刻回答，但哪怕只是问这个问题，就说明你已经越过了"这份工作好不好"的层面。',
+    steps:[
+      {t:'第一步：回顾你的"值得"瞬间',d:'上一次你在工作中真的觉得"这很值得"是什么时候？你在做什么？那个东西的核心元素是什么——是创造、是帮助别人、是数据、是写作、是独立自主？'},
+      {t:'第二步：用业余时间试',d:'不需要辞职。利用晚上或周末，找一个和你想探索的方向相关的迷你项目——能在一个月内完成的。不是判断你擅不擅长——是感受"我喜欢做这件事吗"。'},
+      {t:'第三步：利用你的"非对称优势"',d:'错位不是浪费——你之前在错的方向上积攒的能力，在迁移到对的方向时会成为别人没有的复合武器。你只是在等你找对枪口的方向。'}
+    ],
+    recommend:['在本公司内横向换到更接近你的内在方向的那个部门/岗位——先把方向调对，再考虑要不要离开公司','给自己一段"低风险探索期"——在保留现有收入的同时，在业余系统地接触新方向','将"迁移到对的方向"作为未来12-18个月的目标——每一步都算数'],
+    golden:'在错的方向上坚持，不是坚定——是迂回。<br><br>先找到对的方向，再充分发挥你的坚定不迟。'
+  },
+  D:{
+    badge:'职业倦怠诊断报告',
+    name:'意义迷失型',
+    tagline:'你不是没有方向——你是太久没停下来，给自己听方向的声音',
+    sub:'诊断结论：你的倦怠来自一个更深的地方——你还没定义"什么对自己重要"。这不是缺陷，是阶段。每个清楚自己想要什么的人，都曾走过一段"不确定"的路。',
+    profile:{'意义迷失指数':91,'方向错位指数':76,'能量透支指数':58,'环境消耗指数':42},
+    signals:[
+      '被朋友问到"你到底想做什么"时，脑子是空白的',
+      '周一到周五过得差不多。说不上好，也说不上坏。就是在过',
+      '看到别的人很有热情地谈论自己的工作时，既羡慕又不理解',
+      '不讨厌目前的工作——也不喜欢。不是爱恨分明，是一片灰色',
+      '有时候会想"如果明天被解雇了，也许反而是好事"'
+    ],
+    cause:'你不是没有能力——你可能在目前的工作上做得不错，甚至被信任。你不是真的迷失——你只是被动太久了。在"被动接受"的状态久了之后，你的内心会慢慢关上"主动想要"的开关。在某个不确定的时期——可能是毕业、可能是某份工作做了太久——你把"寻找方向"这件事搁置了。搁置久了，"我要去哪儿"这个问题变得越难开口。你需要的东西很简单，也最难：一个安静的空档——让已经淡忘了的自己重新浮到意识层面。',
+    steps:[
+      {t:'第一步：给自己一段真正的空白',d:'至少一周以上。不去计划、不安排、不填满。让大脑从日常的噪音里脱身。空白到了第三天，你会开始听到那些一直被压制着的答案。'},
+      {t:'第二步：换一个问题',d:'不是"我该做什么工作"——这个问题太抽象、太恐怖了。换成："我最近一次感到全身心平静，是在做什么？"——这个关于宁静的答案里，藏着你关于方向的答案。'},
+      {t:'第三步：接受"没有明确方向"也是可以的',d:'你现在需要的不是热血沸腾的目的——是一个可以停留的、尚且不完整的方向。在踏出的每一步中，方向会越来越清晰。'}
+    ],
+    recommend:['继续目前的工作，但立刻减少投入度——把工作的默认倾注量往下拉到70%，多出来30%能量给自己用来找方向','尝试三件完全不同的事（小规模、低成本）——找一个月，每周试一件从未接触过的事，激发"原来我还喜欢这个"的神经','找一个能陪你澄清方向的人——mentor/咨询师/资深朋友。不是让他们给你答案，是用提问照到你自己没注意到的角落'],
+    golden:'你不是没有方向。你是太久没有停下来，给自己听方向的声音。<br><br>迷茫也是一种信号——它在提醒你，你还没有定义什么对自己重要。每个清楚自己想要什么的人，都曾走过一段"不确定"的路。'
+  }
+};
+
+// ========== 应用逻辑 ==========
+
+let answers=[],currentQ=0;
+const app=document.getElementById('app');
+
+function renderCover(){
+  app.innerHTML=`
+    <div class="screen active cover">
+      <h1>你的职业倦怠<br>是<span>休息</span>能解决<br>还是必须<span>换工作</span></h1>
+      <div class="sub">5道情景题 · 1分钟完成<br>即时生成你的倦怠诊断报告</div>
+      <button class="btn-start" onclick="startQuiz()">开始测试</button>
+      <div class="trust">你的答案仅存在本地 · 不会上传</div>
+    </div>
+  `;
+}
+
+function startQuiz(){
+  answers=[];currentQ=0;
+  renderQuestion();
+}
+
+function renderQuestion(){
+  if(currentQ>=questions.length){showLoading();return;}
+  const q=questions[currentQ];
+  const pct=Math.round((currentQ/questions.length)*100);
+  app.innerHTML=`
+    <div class="screen active">
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="progress-label">${currentQ+1} / ${questions.length}</div>
+      </div>
+      <div class="question-area">
+        <div class="q-text">${q.q}</div>
+        <div class="options">
+          ${q.opts.map((o,i)=>`
+            <div class="opt" onclick="selectAnswer('${o.l}')">
+              <div class="letter">${o.l}</div>
+              <div class="txt">${o.t}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function selectAnswer(letter){
+  answers.push(letter);
+  currentQ++;
+  if(currentQ>=questions.length){
+    showLoading();
+  }else{
+    renderQuestion();
+  }
+}
+
+function showLoading(){
+  app.innerHTML=`
+    <div class="screen active loading">
+      <div class="spinner"></div>
+      <div class="dots"><span></span><span></span><span></span></div>
+      <div class="msg" id="loadMsg">正在分析你的职业倦怠...</div>
+    </div>
+  `;
+  const msgs=[
+    '正在分析你的职业倦怠...',
+    '识别倦怠信号...',
+    '匹配诊断模型...',
+    '生成专属报告...'
+  ];
+  let i=0;
+  const t=setInterval(()=>{
+    i++;
+    if(i<msgs.length){
+      document.getElementById('loadMsg').textContent=msgs[i];
+    }else{
+      clearInterval(t);
+      setTimeout(showResult,400);
+    }
+  },700);
+}
+
+function showResult(){
+  // 计分：数哪个字母最多
+  const count={A:0,B:0,C:0,D:0};
+  answers.forEach(a=>count[a]++);
+  // 找最大值，并列按 A>B>C>D 优先级
+  const order=['A','B','C','D'];
+  let maxType='A',maxCount=0;
+  order.forEach(t=>{if(count[t]>maxCount){maxCount=count[t];maxType=t;}});
+  const r=reports[maxType];
+
+  // 画像条
+  const profileKeys=Object.keys(r.profile);
+  const profileHTML=profileKeys.map((k,i)=>`
+    <div class="profile-row">
+      <div class="label">${k}</div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${r.profile[k]}%;transition-delay:${i*0.1}s"></div></div>
+      <div class="pct">${r.profile[k]}%</div>
+    </div>
+  `).join('');
+
+  // 信号清单
+  const signalsHTML=r.signals.map(s=>`
+    <div class="item"><span class="chk">✓</span><span>${s}</span></div>
+  `).join('');
+
+  // 解法步骤
+  const stepsHTML=r.steps.map(s=>`
+    <div class="step">
+      <div class="stitle">${s.t}</div>
+      <div class="sdesc">${s.d}</div>
+    </div>
+  `).join('');
+
+  // 推荐
+  const recHTML=r.recommend.map(rc=>`
+    <div class="item"><span class="dot">▸</span><span>${rc}</span></div>
+  `).join('');
+
+  app.innerHTML=`
+    <div class="screen active result">
+      <div class="type-badge">${r.badge}</div>
+      <div class="type-name">${r.name}</div>
+      <div class="type-tagline">${r.tagline}</div>
+      <div class="type-sub">${r.sub}</div>
+
+      <div class="profile-section">
+        <h3>📊 多维度画像</h3>
+        ${profileHTML}
+      </div>
+
+      <div class="checklist">
+        <h3>🔍 你的倦怠信号清单</h3>
+        ${signalsHTML}
+      </div>
+
+      <div class="root-cause">
+        <h3>🧬 根源分析</h3>
+        <p>${r.cause}</p>
+      </div>
+
+      <div class="solution">
+        <h3>🗺️ 你的最优解法</h3>
+        ${stepsHTML}
+      </div>
+
+      <div class="recommend">
+        <h3>🧭 推荐路径</h3>
+        ${recHTML}
+      </div>
+
+      <div class="golden">
+        <p>${r.golden}</p>
+      </div>
+
+      <button class="share-btn" onclick="alert('长按截图保存你的诊断报告！\n转发给也在困惑的朋友')">📤 分享我的诊断报告</button>
+      <div class="share-hint">长按保存截图 · 转发给也在困惑的朋友</div>
+
+      <div class="footer">答案仅存储在本地 · 不会上传到任何服务器</div>
+    </div>
+  `;
+  // 进度条入场动画
+  setTimeout(()=>{
+    document.querySelectorAll('.bar-fill').forEach(b=>{
+      const target=b.style.width;
+      b.style.width='0%';
+      b.style.transition='width .6s ease';
+      setTimeout(()=>{b.style.width=target;},50);
+    });
+  },200);
+}
+
+// ========== 启动 ==========
+renderCover();
+</script>
+</body>
+</html>
