@@ -1,0 +1,455 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>感情模式深度诊断</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+  background:#1a1a28;color:#e8e0d0;
+  min-height:100vh;display:flex;justify-content:center;
+}
+.app{width:100%;max-width:480px;min-height:100vh;position:relative;overflow:hidden}
+.screen{display:none;flex-direction:column;min-height:100vh;padding:24px 28px}
+.screen.active{display:flex}
+
+/* ===== 封面 ===== */
+.cover{justify-content:center;align-items:center;text-align:center;gap:28px}
+.cover .icon{font-size:64px;margin-bottom:8px}
+.cover h1{font-size:36px;font-weight:900;line-height:1.3;letter-spacing:2px}
+.cover h1 span{color:#d4b87a}
+.cover .sub{font-size:16px;color:#8a8070;line-height:1.7;max-width:300px}
+.cover .btn-start{
+  margin-top:20px;padding:16px 64px;font-size:20px;font-weight:700;
+  background:linear-gradient(135deg,#c9a96e,#a6844d);color:#1a1a28;
+  border:none;border-radius:40px;cursor:pointer;letter-spacing:2px;
+  transition:transform .15s
+}
+.cover .btn-start:active{transform:scale(.96)}
+.cover .trust{font-size:13px;color:#5a5548;margin-top:12px}
+
+/* ===== 题目 ===== */
+.progress-wrap{padding:8px 0 20px}
+.progress-bar{height:4px;background:#2a2a38;border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#c9a96e,#d4b87a);border-radius:2px;transition:width .3s}
+.progress-label{font-size:13px;color:#6a6558;margin-top:8px;text-align:right}
+
+.question-area{flex:1;display:flex;flex-direction:column;gap:24px}
+.question-area .q-text{font-size:28px;font-weight:700;line-height:1.4}
+.options{display:flex;flex-direction:column;gap:14px}
+.opt{
+  padding:18px 20px;border-radius:16px;
+  background:#242430;border:1.5px solid #2e2e3c;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:flex-start;gap:14px;
+}
+.opt:active{transform:scale(.98);border-color:#c9a96e;background:#2a2a38}
+.opt .letter{
+  width:32px;height:32px;border-radius:50%;
+  background:#2e2e3c;color:#8a8070;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:700;flex-shrink:0;
+}
+.opt .txt{font-size:16px;line-height:1.55;color:#c8c0b0}
+
+/* ===== 加载动画 ===== */
+.loading{justify-content:center;align-items:center;text-align:center;gap:32px}
+.loading .spinner{
+  width:60px;height:60px;border:3px solid #2e2e3c;
+  border-top-color:#c9a96e;border-radius:50%;
+  animation:spin .8s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading .msg{font-size:18px;color:#a09880;letter-spacing:1px;transition:all .5s}
+.loading .dots{display:flex;gap:8px;justify-content:center}
+.loading .dots span{width:8px;height:8px;border-radius:50%;background:#c9a96e;animation:pulse 1.2s infinite}
+.loading .dots span:nth-child(2){animation-delay:.2s}
+.loading .dots span:nth-child(3){animation-delay:.4s}
+@keyframes pules{0%,80%,100%{opacity:.3}40%{opacity:1}}
+
+/* ===== 结果页 ===== */
+.result{background:linear-gradient(180deg,#1a1a28 0%,#1f1f2e 100%)}
+.result .type-badge{
+  display:inline-block;padding:8px 20px;border:1px solid rgba(201,169,110,.3);
+  border-radius:20px;font-size:14px;color:#c9a96e;letter-spacing:3px;
+  align-self:flex-start;margin-bottom:16px
+}
+.result .type-name{font-size:42px;font-weight:900;margin-bottom:8px}
+.result .type-tagline{font-size:20px;color:#d4b87a;margin-bottom:4px}
+.result .type-sub{font-size:15px;color:#8a8070;margin-bottom:32px}
+
+/* 画像条 */
+.profile-section{margin-bottom:28px}
+.profile-section h3{font-size:18px;color:#a09880;margin-bottom:16px;letter-spacing:2px}
+.profile-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.profile-row .label{width:90px;font-size:13px;color:#8a8070;text-align:right;flex-shrink:0}
+.profile-row .bar-wrap{flex:1;height:20px;background:#242430;border-radius:10px;overflow:hidden;position:relative}
+.profile-row .bar-fill{height:100%;background:linear-gradient(90deg,#5a4a30,#c9a96e);border-radius:10px;transition:width .8s ease}
+.profile-row .pct{width:44px;font-size:13px;color:#c9a96e;text-align:right;flex-shrink:0}
+
+/* 信号清单 */
+.checklist{margin-bottom:28px}
+.checklist h3{font-size:18px;color:#a09880;margin-bottom:14px;letter-spacing:2px}
+.checklist .item{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:15px;color:#c8c0b0;line-height:1.5}
+.checklist .item .chk{color:#c9a96e;font-size:18px;flex-shrink:0}
+
+/* 根源分析 */
+.root-cause{margin-bottom:28px}
+.root-cause h3{font-size:18px;color:#a09880;margin-bottom:14px;letter-spacing:2px}
+.root-cause p{font-size:15px;color:#b8b0a0;line-height:1.75;margin-bottom:12px}
+
+/* 解法 */
+.solution{margin-bottom:28px}
+.solution h3{font-size:18px;color:#a09880;margin-bottom:14px;letter-spacing:2px}
+.solution .step{margin-bottom:14px;padding-left:16px;border-left:2px solid #3a3a48}
+.solution .step .stitle{font-size:15px;color:#d4b87a;font-weight:600;margin-bottom:4px}
+.solution .step .sdesc{font-size:14px;color:#b0a898;line-height:1.6}
+
+/* 推荐 */
+.recommend{margin-bottom:28px}
+.recommend h3{font-size:18px;color:#a09880;margin-bottom:14px;letter-spacing:2px}
+.recommend .item{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;font-size:15px;color:#c8c0b0}
+.recommend .item .dot{color:#c9a96e;font-weight:700}
+
+/* 金句 */
+.golden{margin-bottom:32px;padding:28px 24px;background:#242430;border-radius:16px;text-align:center}
+.golden p{font-size:18px;color:#d4b87a;line-height:1.7;letter-spacing:1px}
+
+/* 分享 */
+.share-btn{
+  display:block;width:100%;padding:16px;font-size:17px;font-weight:700;
+  background:linear-gradient(135deg,#c9a96e,#a6844d);color:#1a1a28;
+  border:none;border-radius:30px;cursor:pointer;letter-spacing:2px;margin-bottom:12px
+}
+.share-btn:active{transform:scale(.98)}
+.share-hint{text-align:center;font-size:13px;color:#5a5548;margin-bottom:40px}
+
+/* 页尾 */
+.footer{text-align:center;padding:20px;font-size:12px;color:#3a3a48;border-top:1px solid #242430}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+// ========== 数据 ==========
+
+const questions = [{
+  q:'暧昧了一段时间，<br>对方突然三天没主动找你',
+  opts:[
+    {l:'A',t:'慌了。翻聊天记录找自己哪里说错了。然后主动发一句"你最近是不是很忙？"——先开口，免得对方忘了自己'},
+    {l:'B',t:'心里一凉，但嘴上说没事。告诉自己"本来也没多喜欢"，然后把这个人从置顶里悄悄撤下来'},
+    {l:'C',t:'更被吸引了。这种忽冷忽热的节奏让你心跳加快——太安稳的人你反而没感觉'},
+    {l:'D',t:'看见了，无感。三天不联系很正常。回不回都行，反正每个暧昧到最后都差不多'}
+  ]
+},{
+  q:'你们吵架了。<br>情绪上头的那一刻，你第一反应是',
+  opts:[
+    {l:'A',t:'先低头。不管谁对谁错，你先说"是我不好"。冷战太可怕了——宁愿自己吞下去，也不想被晾着'},
+    {l:'B',t:'想分手。不是真的想分，是那一瞬间觉得"不在一起就不用承受这个了"。已经在脑补一个人的清净生活'},
+    {l:'C',t:'把自己代入你妈/你爸当时的样子。吵到一半突然被自己吓到——那句话、那个语气，和二十年前一模一样'},
+    {l:'D',t:'沉默。没什么想说的。吵了也不会改变什么，上次的结果你还记得：一样的事，一样的结局'}
+  ]
+},{
+  q:'你最怕自己未来的<br>感情状态变成哪种',
+  opts:[
+    {l:'A',t:'一直在付出，一直不被看见。某天醒来发现——自己把全部给了对方，却连自己喜欢什么都忘了'},
+    {l:'B',t:'一个人孤独终老，但更怕的是——那是你自己选的。每一次靠近都找理由跑掉，跑到最后没人追了'},
+    {l:'C',t:'不断爱上同一类错的人，浪费十年追一个永远给不了你想要的东西的人'},
+    {l:'D',t:'和一个还不错的人过完还不错的一生。没有痛苦，没有争吵，也没有心动——就是"还行"'}
+  ]
+},{
+  q:'回顾你喜欢过的人，<br>他们的共同点是什么',
+  opts:[
+    {l:'A',t:'一开始对你好，后来需要你照顾。或者反过来——你总被"需要被拯救"的人吸引'},
+    {l:'B',t:'独立、不太粘人、有自己的世界。但讽刺的是——你一边喜欢距离感，一边又觉得不被真正在乎'},
+    {l:'C',t:'都有点"拿不到"。或者特别冷淡，或者心里有别人——对你好的人，你觉得没意思'},
+    {l:'D',t:'不太记得了。不是特别喜欢，也不是特别不喜欢。刚好遇到了，刚好在一起了，刚好也分开了'}
+  ]
+},{
+  q:'如果下一段感情又走上<br>同一条老路，你会',
+  opts:[
+    {l:'A',t:'继续对TA好。也许这次不一样呢？也许我做得更多一点，TA就会看见我了'},
+    {l:'B',t:'提前结束。在这次受伤之前先把关系关掉。理由是"我们不合适"——但上次也用了这个理由'},
+    {l:'C',t:'不意外。你早就知道自己会选这种人。选的时候就知道结局。这次至少想搞清楚——为什么'},
+    {l:'D',t:'该怎样就怎样。老路走多了，早就不觉得疼了。换一个人，大概也还是一样'}
+  ]
+}];
+
+const reports = {
+  A:{
+    badge:'感情模式诊断报告',
+    name:'讨好型恋爱人格',
+    tagline:'你不停付出，怕一停下来对方就走了',
+    sub:'诊断结论：你不是"太爱了"——你是把"被需要"当成了"被爱"。',
+    profile:{'讨好付出指数':91,'自我忽视指数':78,'关系安全感':45,'自我价值感':38},
+    signals:[
+      '吵架永远是你先道歉，哪怕不是你的错',
+      '对方三天不发消息你就慌，开始翻聊天记录找错误',
+      '常被"需要被你照顾"的人吸引，但最后发现只有你在照顾',
+      '很难提需求——"随便""都行""听你的"成了口头禅',
+      '一个人的时候不知道自己想要什么，因为你一直在满足别人',
+      '分手后才发现——你把全部给了对方，连自己喜欢什么都忘了'
+    ],
+    cause:'讨好型的底层，是一个童年的等式："我满足你 = 你留下来。"你可能有一个情绪不稳定的父母——他们的情绪是你的天气预报。你很小就学会察言观色、提前安抚、隐藏自己的需求以避免冲突。这不是你的错，是你在一个需要"讨好才能安全"的环境里发展出来的生存策略。问题在于——你现在在亲密关系里用的还是同一套。你不是在谈恋爱，你是在续写童年。',
+    steps:[
+      {t:'第一步：停止用"付出"兑换"被爱"',d:'下次想说"没事"的时候停一下。在想先道歉之前，问自己："我真的错了吗？"你不需要替对方消化情绪来证明你值得待在这段关系里。'},
+      {t:'第二步：练习提一个最小的需求',d:'就一个——比如"今天想吃什么""我不想看这个电影"。你发现对方没有因为你的需求而离开——这才是成年人之间的亲密。不是讨好，是平等。'},
+      {t:'第三步：跟自己的童年和解',d:'你小时候讨好，是因为你需要那样才能生存。现在你已经不是那个需要靠乖巧才能不被抛弃的小孩了。你可以被爱——即使你不完美。'}
+    ],
+    recommend:['下次约会直接说你想去哪，不等对方先决定','冷战期间忍住不先发消息，让安静留在那里','找一个人让你感到"即使我不付出，他也在"的关系'],
+    golden:'你小时候讨好，是因为你需要那样才能活下去。<br><br>但现在你不是那个小孩了——你可以被爱，不需要先交出自己。'
+  },
+  B:{
+    badge:'感情模式诊断报告',
+    name:'逃亡型恋爱人格',
+    tagline:'一快确定关系就想跑——靠近=危险，这是你童年学会的',
+    sub:'诊断结论：你不是不需要爱。你是把"亲密"和"危险"绑在了一起。',
+    profile:{'逃避亲密指数':91,'独处安全感':82,'关系信任度':35,'渴望亲密指数':68},
+    signals:[
+      '暧昧期你最上头，一旦对方认真了你开始冷',
+      '对方太粘人你会窒息，太独立你又觉得不在乎你',
+      '吵架时第一反应是想分手——不是真的想，是"先跑就不算被抛弃"',
+      '你有一串理由解释为什么"我们不合适"，但和前一个差不多',
+      '一个人待着其实挺好——至少安全',
+      '你羡慕长久的稳定的关系，但又觉得那种东西不属于你'
+    ],
+    cause:'逃亡型的底层，是童年被亲密伤过。你可能有一个过度侵入的父母——他们以爱之名控制你。或者有一个忽冷忽热的父母——你靠近的时候被推开，你走开的时候又被拉回来。你学到了："亲密 = 失控 + 受伤"。所以长大后你在一段关系里的首要任务不是"去爱"，而是"保持距离"——距离让你安全。但距离也让你孤独。',
+    steps:[
+      {t:'第一步：把"逃跑"从自动反应变成被观察的对象',d:'下一次想逃的时候，不做决定。只是观察——"我又想跑了。这次触发我的是什么？"'},
+      {t:'第二步：给关系一个"不跑的考验"',d:'告诉自己——这次我先不跑，我等一个月。一个月之内不管多难受，我留下来。'},
+      {t:'第三步：接受"被爱不需要逃跑许可证"',d:'你不需要在对方离开你之前先离开来证明自己不受伤害。你可以留下——即使害怕。'}
+    ],
+    recommend:['下次想分手的时候，先过48小时再做决定','找一个你有安全感的人，告诉他"我有时候会想跑，不是因为不爱你"','练习待在一段稳定的关系里，不用制造矛盾来测试距离'],
+    golden:'你跑不是因为不爱——是因为爱这个字，在你小时候被写成了伤害。<br><br>但成年人的亲密，可以是不一样的。你可以留下。即使害怕。'
+  },
+  C:{
+    badge:'感情模式诊断报告',
+    name:'复刻型恋爱人格',
+    tagline:'你追的不是那个人——是二十年前没得到的那个回应',
+    sub:'诊断结论：你不是选错人——你是在选同一个人的不同版本。',
+    profile:{'模式重复指数':91,'对安全型无感度':76,'自我觉察力':62,'改变动力':48},
+    signals:[
+      '对你很好的人你没兴趣——你觉得"没感觉"',
+      '忽冷忽热、拿不到、心里有别人的人反而让你心跳加速',
+      '经常发现自己在重复父母的感情模式——相同的冲突、相同的角色',
+      '你说服自己"这次不一样"，但朋友说"你又选了一个你爸/你妈"',
+      '你很清醒——选人的时候就知道结局。但还是选了',
+      '有一种"我想改写过去"的暗线驱动——只是你一直没成功'
+    ],
+    cause:'复刻型的底层，是一个未完成的情结。我们每个人都会被"熟悉"吸引。熟悉不等于健康——熟悉等于"我见过这个"。如果你小时候需要去争取一个冷漠的父母的关注，你成年后的"心动"标准就被调成了："这个人需要我去争取"。对你好的人、安稳的人——在你的神经回路里是"陌生"的。这不是你的错——是你的童年没有给你示范过"什么样的爱是健康的"。',
+    steps:[
+      {t:'第一步：看清自己选人的"配方"',d:'把你过去喜欢过的人列出来，写下他们的共同点。诚实面对——你对"可以拿到的人"是不是真的没有兴趣？'},
+      {t:'第二步：有意识地换口味',d:'下次遇到一个人——如果他一上来就让你心跳加速、又得不到，那就是你的旧模式在响了。这次试试给那个"一开始没有电光石火但你觉得安全"的人一个机会。'},
+      {t:'第三步：跟父母的那个版本告别',d:'你小时候改变不了他们。你不需要用余生在别人身上改写那个结局。你可以直接说："那不是我的问题。那是他们的。"'}
+    ],
+    recommend:['列出你过去喜欢过的人，找出共同点，写下来','下次"心动"时停下来问自己："是在喜欢他，还是喜欢熟悉？"','给"安全型"一个机会——即使一开始没有火花'],
+    golden:'你追的不是那个人——是二十年前没得到的那个回应。<br><br>你不是非得改写出一个不同的结局。你可以直接换一本书。'
+  },
+  D:{
+    badge:'感情模式诊断报告',
+    name:'麻木型恋爱人格',
+    tagline:'你已经不怎么动心了，只是在走流程',
+    sub:'诊断结论：你不是不想爱。你是太久没感觉到"心动"，已经忘了怎么开始。',
+    profile:{'情感麻木指数':91,'关系投入度':35,'自我了解度':42,'重新唤醒可能':55},
+    signals:[
+      '每段感情都是"还行"——没有太开心，也没有太难过',
+      '分手后恢复得很快——不是因为你够坚强，是因为没有真正投入过',
+      '朋友问你"你到底喜欢什么样的人"，你答不上来',
+      '有时候你会故意制造一些情绪——吵架、试探——只是想确认自己还活着',
+      '你羡慕别人为爱情哭和笑——但轮到自己，永远是平线',
+      '你觉得"也许我这辈子就是这样了"——不是绝望，是接受'
+    ],
+    cause:'麻木型的底层，是感情上的"低电量模式"。你可能在一个情感表达匮乏的家庭里长大。你的父母没有教过你什么是亲密、什么是表达爱。他们可能给予了物质，却没有给予温度。你长大后不是"不会爱"——而是从来没有机会观察什么是爱。麻木不是你的性格缺陷。它是一种适应——小时候你在一个没有温度的环境里活了下来，靠的就是降低期待。但现在这个策略已经不再保护你了——它在孤立你。',
+    steps:[
+      {t:'第一步：重新建立感受',d:'你需要的不是换一个人——是先"醒过来"。去做一些让你有感受的事——帮助一个人、完成一件事、去一个完全陌生的地方。让情绪从冬眠里出来。'},
+      {t:'第二步：观察别人的关系',d:'看看身边那些在健康关系里的人是怎么互动的。不是模仿——是补充你童年没有学到的那份"关系说明书"。'},
+      {t:'第三步：别急着定义自己',d:'"我这人就是这样的"——这是你对自己说的最不公平的话。你不是冷，你只是冷了太久。'}
+    ],
+    recommend:['去做一件你从未做过的事——唤醒感觉，不一定是恋爱','观察身边一段健康的关系，看他们是怎么相互对待的','不要因为"没有什么不好"而留在一段关系里'],
+    golden:'你不是没有爱的能力——你是小时候没见过，所以不知道怎么开始。<br><br>好好感受一次——不是为了别人，是为了告诉你自己：我的心还在。'
+  }
+};
+
+
+// ========== 应用逻辑 ==========
+
+let answers=[],currentQ=0;
+const app=document.getElementById('app');
+
+function renderCover(){
+  app.innerHTML=`
+    <div class="screen active cover">
+      <h1>为什么你总在<br><span>重复</span>同一种关系<br>5题<span>看清</span>你的感情模式</h1>
+      <div class="sub">5道情景题 · 1分钟完成<br>即时生成你的感情模式诊断报告</div>
+      <button class="btn-start" onclick="startQuiz()">开始测试</button>
+      <div class="trust">你的答案仅存在本地 · 不会上传</div>
+    </div>
+  `;
+}
+
+function startQuiz(){
+  answers=[];currentQ=0;
+  renderQuestion();
+}
+
+function renderQuestion(){
+  if(currentQ>=questions.length){showLoading();return;}
+  const q=questions[currentQ];
+  const pct=Math.round((currentQ/questions.length)*100);
+  app.innerHTML=`
+    <div class="screen active">
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="progress-label">${currentQ+1} / ${questions.length}</div>
+      </div>
+      <div class="question-area">
+        <div class="q-text">${q.q}</div>
+        <div class="options">
+          ${q.opts.map((o,i)=>`
+            <div class="opt" onclick="selectAnswer('${o.l}')">
+              <div class="letter">${o.l}</div>
+              <div class="txt">${o.t}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function selectAnswer(letter){
+  answers.push(letter);
+  currentQ++;
+  if(currentQ>=questions.length){
+    showLoading();
+  }else{
+    renderQuestion();
+  }
+}
+
+function showLoading(){
+  app.innerHTML=`
+    <div class="screen active loading">
+      <div class="spinner"></div>
+      <div class="dots"><span></span><span></span><span></span></div>
+      <div class="msg" id="loadMsg">正在分析你的职业倦怠...</div>
+    </div>
+  `;
+  const msgs=[
+    '正在分析你的职业倦怠...',
+    '识别倦怠信号...',
+    '匹配诊断模型...',
+    '生成专属报告...'
+  ];
+  let i=0;
+  const t=setInterval(()=>{
+    i++;
+    if(i<msgs.length){
+      document.getElementById('loadMsg').textContent=msgs[i];
+    }else{
+      clearInterval(t);
+      setTimeout(showResult,400);
+    }
+  },700);
+}
+
+function showResult(){
+  // 计分：数哪个字母最多
+  const count={A:0,B:0,C:0,D:0};
+  answers.forEach(a=>count[a]++);
+  // 找最大值，并列按 A>B>C>D 优先级
+  const order=['A','B','C','D'];
+  let maxType='A',maxCount=0;
+  order.forEach(t=>{if(count[t]>maxCount){maxCount=count[t];maxType=t;}});
+  const r=reports[maxType];
+
+  // 画像条
+  const profileKeys=Object.keys(r.profile);
+  const profileHTML=profileKeys.map((k,i)=>`
+    <div class="profile-row">
+      <div class="label">${k}</div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${r.profile[k]}%;transition-delay:${i*0.1}s"></div></div>
+      <div class="pct">${r.profile[k]}%</div>
+    </div>
+  `).join('');
+
+  // 信号清单
+  const signalsHTML=r.signals.map(s=>`
+    <div class="item"><span class="chk">✓</span><span>${s}</span></div>
+  `).join('');
+
+  // 解法步骤
+  const stepsHTML=r.steps.map(s=>`
+    <div class="step">
+      <div class="stitle">${s.t}</div>
+      <div class="sdesc">${s.d}</div>
+    </div>
+  `).join('');
+
+  // 推荐
+  const recHTML=r.recommend.map(rc=>`
+    <div class="item"><span class="dot">▸</span><span>${rc}</span></div>
+  `).join('');
+
+  app.innerHTML=`
+    <div class="screen active result">
+      <div class="type-badge">${r.badge}</div>
+      <div class="type-name">${r.name}</div>
+      <div class="type-tagline">${r.tagline}</div>
+      <div class="type-sub">${r.sub}</div>
+
+      <div class="profile-section">
+        <h3>📊 多维度画像</h3>
+        ${profileHTML}
+      </div>
+
+      <div class="checklist">
+        <h3>🔍 你的倦怠信号清单</h3>
+        ${signalsHTML}
+      </div>
+
+      <div class="root-cause">
+        <h3>🧬 根源分析</h3>
+        <p>${r.cause}</p>
+      </div>
+
+      <div class="solution">
+        <h3>🗺️ 你的最优解法</h3>
+        ${stepsHTML}
+      </div>
+
+      <div class="recommend">
+        <h3>🧭 推荐路径</h3>
+        ${recHTML}
+      </div>
+
+      <div class="golden">
+        <p>${r.golden}</p>
+      </div>
+
+      <button class="share-btn" onclick="alert('长按截图保存你的诊断报告！\n转发给也在困惑的朋友')">📤 分享我的诊断报告</button>
+      <div class="share-hint">长按保存截图 · 转发给也在困惑的朋友</div>
+
+      <div class="footer">答案仅存储在本地 · 不会上传到任何服务器</div>
+    </div>
+  `;
+  // 进度条入场动画
+  setTimeout(()=>{
+    document.querySelectorAll('.bar-fill').forEach(b=>{
+      const target=b.style.width;
+      b.style.width='0%';
+      b.style.transition='width .6s ease';
+      setTimeout(()=>{b.style.width=target;},50);
+    });
+  },200);
+}
+
+// ========== 启动 ==========
+renderCover();
+</script>
+</body>
+</html>
+
