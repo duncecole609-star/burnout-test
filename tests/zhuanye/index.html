@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>职场选择诊断</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#1a1a28;color:#e8e0d0;min-height:100vh;display:flex;justify-content:center}
+.app{width:100%;max-width:480px;min-height:100vh;position:relative;overflow:hidden}
+.screen{display:none;flex-direction:column;min-height:100vh;padding:24px 28px}
+.screen.active{display:flex}
+.cover{justify-content:center;align-items:center;text-align:center;gap:24px}
+.cover h1{font-size:34px;font-weight:900;line-height:1.3;letter-spacing:2px}
+.cover h1 span{color:#d4b87a}
+.cover .sub{font-size:15px;color:#8a8070;line-height:1.7;max-width:300px}
+.cover .btn-start{margin-top:16px;padding:15px 56px;font-size:19px;font-weight:700;background:linear-gradient(135deg,#c9a96e,#a6844d);color:#1a1a28;border:none;border-radius:40px;cursor:pointer;letter-spacing:2px;transition:transform .15s}
+.cover .btn-start:active{transform:scale(.96)}
+.progress-wrap{padding:8px 0 20px}
+.progress-bar{height:4px;background:#2a2a38;border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#c9a96e,#d4b87a);border-radius:2px;transition:width .3s}
+.progress-label{font-size:13px;color:#6a6558;margin-top:8px;text-align:right}
+.q-area{flex:1;display:flex;flex-direction:column;gap:20px}
+.q-area .q-text{font-size:26px;font-weight:700;line-height:1.4}
+.options{display:flex;flex-direction:column;gap:12px}
+.opt{padding:22px 20px;border-radius:16px;background:#242430;border:1.5px solid #2e2e3c;cursor:pointer;transition:all .2s;display:flex;align-items:flex-start;gap:14px}
+.opt:active{transform:scale(.98);border-color:#c9a96e;background:#2a2a38}
+.opt .letter{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.opt.a .letter{background:rgba(201,169,110,.15);color:#c9a96e}
+.opt.b .letter{background:rgba(255,107,107,.12);color:#ff6b6b}
+.opt .txt{font-size:16px;line-height:1.55;color:#c8c0b0;flex:1}
+.loading{justify-content:center;align-items:center;text-align:center;gap:28px}
+.loading .spinner{width:56px;height:56px;border:3px solid #2e2e3c;border-top-color:#c9a96e;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading .msg{font-size:17px;color:#a09880;letter-spacing:1px}
+.result{background:linear-gradient(180deg,#1a1a28 0%,#1f1f2e 100%)}
+.result .badge{display:inline-block;padding:8px 18px;border:1px solid rgba(201,169,110,.3);border-radius:18px;font-size:14px;color:#c9a96e;letter-spacing:3px;margin-bottom:16px;align-self:flex-start}
+.result .type-name{font-size:38px;font-weight:900;margin-bottom:8px}
+.result .tagline{font-size:19px;color:#d4b87a;margin-bottom:4px}
+.result .sub{font-size:15px;color:#8a8070;margin-bottom:28px}
+.score-bar{margin-bottom:24px;display:flex;align-items:center;gap:12px}
+.score-bar .s-label{font-size:14px;color:#8a8070;min-width:50px;text-align:right}
+.score-bar .s-track{flex:1;height:24px;background:#242430;border-radius:12px;overflow:hidden;display:flex}
+.score-bar .s-fill-a{height:100%;background:linear-gradient(90deg,#c9a96e,#d4b87a);transition:width .6s ease}
+.score-bar .s-fill-b{height:100%;background:linear-gradient(90deg,#ff6b6b,#e05555);transition:width .6s ease}
+.score-bar .s-pct{font-size:16px;color:#d4b87a;font-weight:700;min-width:50px}
+.section{margin-bottom:22px}
+.section h3{font-size:17px;color:#a09880;margin-bottom:12px;letter-spacing:2px}
+.section p{font-size:15px;color:#b8b0a0;line-height:1.75;margin-bottom:10px}
+.section .tips{display:flex;flex-direction:column;gap:8px}
+.section .tip{padding-left:14px;border-left:2px solid #3a3a48;font-size:14px;color:#b0a898;line-height:1.6}
+.golden{margin-bottom:24px;padding:24px;background:#242430;border-radius:14px;text-align:center}
+.golden p{font-size:17px;color:#d4b87a;line-height:1.7;letter-spacing:1px}
+.share-btn{display:block;width:100%;padding:15px;font-size:17px;font-weight:700;background:linear-gradient(135deg,#c9a96e,#a6844d);color:#1a1a28;border:none;border-radius:30px;cursor:pointer;letter-spacing:2px;margin-bottom:10px}
+.share-btn:active{transform:scale(.98)}
+.share-hint{text-align:center;font-size:13px;color:#5a5548;margin-bottom:40px}
+.footer{text-align:center;padding:20px;font-size:12px;color:#3a3a48;border-top:1px solid #242430}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+// ===== 配置区（每个选题改这里）=====
+const CONFIG = {"title":"继续做专业，还是转去带团队？","subtitle":"5道二选一 · 看清你的真实倾向","badge":"职业方向诊断","labelA":"专业路线","labelB":"管理路线","questions":[{"scene":"领导问你\"想不想带两个人\"","A":"不太想。带人意味着开会、汇报、对齐一下","B":"有点动心。终于可以从做变成让事情发生"},{"scene":"你最高兴的工作瞬间","A":"解决了一个技术/业务难题，同事都没搞定","B":"带的实习生第一次独立完成项目，来跟我说谢谢"},{"scene":"你最怕什么","A":"每天开会、扯皮、画饼，离专业越来越远","B":"40岁还在跟25岁PK同一个岗位的硬技能"},{"scene":"看公司里你觉得混得最好的那个人","A":"是那个\"谁都搞不定的问题就找他\"的大牛","B":"是那个\"能让一群大牛好好一起干活\"的TL"},{"scene":"如果必须选一个方向投入未来五年","A":"把自己变成这个领域最锋的那把刀","B":"把自己变成一个能指挥十把刀的操盘手"}],"reports":{"A":{"name":"专业路线型","tagline":"你更偏向专业路线","sub":"你的选择倾向明显偏向专业路线方向","analysis":"在5个场景中，你的大多数选择都指向了专业路线。这说明专业路线是你面对这类决策时的默认策略。这不是对或错——是你的底层逻辑在替你做决定。","tips":["偶尔用\"管理路线\"的视角来挑战自己的默认选择","在你擅长的方向之外，保留10%的探索空间","你的直觉值得信任——但也值得偶尔被质疑"],"golden":"选择没有对错，只有适不适合现在的你。"},"mid":{"name":"左右平衡型","tagline":"你在两个方向之间找到了张力","sub":"两边各有各的道理，你没有被任何一边完全说服","analysis":"你在5个场景中左右摇摆——这不是优柔寡断，是你比大多数人看到了更多的维度。你的答案不一定非此即彼。","tips":["给自己设一个决策截止日——信息够了就下手","考虑一个混合方案：80%稳住一边，20%试另一边","和你信任的人聊聊你的纠结——外部视角常常能照到盲区"],"golden":"你不是选不出来——你是两条路都看得很清楚。"},"B":{"name":"管理路线型","tagline":"你更偏向管理路线","sub":"你的选择倾向明显偏向管理路线方向","analysis":"在5个场景中，你的大多数选择都指向了管理路线。这说明你对管理路线有更强的内在驱动——不是别人在推你，是你在推自己。但偶尔停下来问问：这个方向是你主动选的，还是对专业路线的反弹？","tips":["给自己的选择设一个检验期——三个月后回来复盘","在冲的方向上留一条退路——不是不自信，是成熟","看看那些选了\"专业路线\"的人——他们过得怎么样？"],"golden":"敢选择的人，才敢承担选择的结果。"}}};
+
+// ===== 通用引擎 =====
+let answers=[],currentQ=0;
+
+function renderCover(){
+  document.getElementById('app').innerHTML=`
+    <div class="screen active cover">
+      <h1>${CONFIG.title}</h1>
+      <div class="sub">5道二选一 · 1分钟完成<br>${CONFIG.subtitle}</div>
+      <button class="btn-start" onclick="startQuiz()">开始测试</button>
+    </div>`;
+}
+
+function startQuiz(){answers=[];currentQ=0;renderQuestion();}
+
+function renderQuestion(){
+  if(currentQ>=CONFIG.questions.length){showLoading();return;}
+  const q=CONFIG.questions[currentQ];
+  const pct=Math.round((currentQ/CONFIG.questions.length)*100);
+  document.getElementById('app').innerHTML=`
+    <div class="screen active">
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="progress-label">${currentQ+1}/${CONFIG.questions.length}</div>
+      </div>
+      <div class="q-area">
+        <div class="q-text">${q.scene}</div>
+        <div class="options">
+          <div class="opt a" onclick="selectAnswer('A')"><div class="letter">A</div><div class="txt">${q.A}</div></div>
+          <div class="opt b" onclick="selectAnswer('B')"><div class="letter">B</div><div class="txt">${q.B}</div></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function selectAnswer(letter){answers.push(letter);currentQ++;currentQ>=CONFIG.questions.length?showLoading():renderQuestion();}
+
+function showLoading(){
+  document.getElementById('app').innerHTML=`<div class="screen active loading"><div class="spinner"></div><div class="msg" id="loadMsg">正在分析你的选择...</div></div>`;
+  const msgs=['正在分析你的选择...','识别决策模式...','生成专属报告...'];let i=0;
+  const t=setInterval(()=>{i++;if(i<msgs.length)document.getElementById('loadMsg').textContent=msgs[i];else{clearInterval(t);setTimeout(showResult,400);}},700);
+}
+
+function showResult(){
+  const aCount=answers.filter(a=>a==='A').length;
+  const bCount=answers.length-aCount;
+  const aPct=Math.round(aCount/answers.length*100);
+  const bPct=100-aPct;
+  let tier; if(aCount>=4) tier='A'; else if(bCount>=4) tier='B'; else tier='mid';
+  const r=CONFIG.reports[tier];
+
+  document.getElementById('app').innerHTML=`
+    <div class="screen active result">
+      <div class="badge">${CONFIG.badge}</div>
+      <div class="type-name">${r.name}</div>
+      <div class="tagline">${r.tagline}</div>
+      <div class="sub">${r.sub}</div>
+      <div class="score-bar">
+        <span class="s-label">${CONFIG.labelA}</span>
+        <div class="s-track"><div class="s-fill-a" style="width:${aPct}%"></div><div class="s-fill-b" style="width:${bPct}%"></div></div>
+        <span class="s-label">${CONFIG.labelB}</span>
+      </div>
+      <div class="section"><h3>📊 分析</h3><p>${r.analysis}</p></div>
+      <div class="section"><h3>💡 建议</h3><div class="tips">${r.tips.map(t=>`<div class="tip">${t}</div>`).join('')}</div></div>
+      <div class="golden"><p>${r.golden}</p></div>
+      <button class="share-btn" onclick="alert('长按截图保存你的诊断报告！')">📤 分享我的诊断结果</button>
+      <div class="share-hint">长按保存截图 · 转发给也在纠结的朋友</div>
+      <div class="footer">答案仅存储在本机 · 不上传服务器</div>
+    </div>`;
+  setTimeout(()=>{document.querySelectorAll('.s-fill-a,.s-fill-b').forEach(b=>{const w=b.style.width;b.style.width='0%';setTimeout(()=>{b.style.width=w;},50);});},200);
+}
+
+renderCover();
+</script>
+</body>
+</html>
